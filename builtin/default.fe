@@ -1,41 +1,69 @@
 ; vim: ts=4 sts=4 sw=4 expandtab
 
+; Define constants for the program
 (= title "cel7ce")
-(= width  16)
+(= width 16)
 (= height 16)
-
 (= msg " no cartridge ")
 (= pad "              ")
 
-(= init (fn ()
-    # Put random characters everywhere, excluding lowercase
-    (let y 0)
-    (while (< y height)
-        (let x 0)
-        (while (< x width)
-            (color (+ 1 (rand 14)))
-            (put x y (num->char (+ 32 (rand 56))))
-            (= x (+ x 1))
+; Logging function for debugging
+(def log (fn [message]
+    (print (string/format "[LOG] %s\n" message))
+))
+
+; Function to handle errors
+(def handle_error (fn [error_message]
+    (log error_message)
+    (throw (error error_message))
+))
+
+; Initialize function to set up the screen
+(= init (fn []
+    ; Log the start of initialization
+    (log "Starting initialization...")
+
+    ; Fill the screen with random characters, excluding lowercase
+    (log "Filling screen with random characters...")
+    (for [y 0 (< y height) (= y (+ y 1))]
+        (for [x 0 (< x width) (= x (+ x 1))]
+            (color (+ 1 (rand 14))) ; Set random color
+            (put x y (num->char (+ 32 (rand 56)))) ; Place random character from ASCII 32 to 87
         )
-        (= y (+ y 1))
     )
 
+    ; Draw the message centered on the screen
     (color 1)
-    (do
-        (let x (- (// width 2) (// (strlen msg) 2)))
-        (let y (// height 2))
-        (put x (- y 1) pad)
-        (put x (- y 0) msg)
-        (put x (+ y 1) pad)
-    )
+    (let [x (- (// width 2) (// (strlen msg) 2))]
+          [y (// height 2)]
+    (log "Drawing centered message...")
+    (put x (- y 1) pad)
+    (put x y msg)
+    (put x (+ y 1) pad))
+
+    ; Log the completion of initialization
+    (log "Initialization completed successfully")
 ))
 
-(= step (fn ()
-    (delay 1)
-    (let sparsity (* (+ (// (ticks) 7) 1) 7))
-    (let i (+ 0x4040 (* 1 49)))
-    (while (< i (+ 0x4040 (* 56 49)))
-        (poke i (if (is (rand sparsity) 0) 1 0))
-        (= i (+ i 1))
-    )
+; Step function to update the screen each frame
+(= step (fn []
+    (log "Starting step update...")
+    (delay 1) ; Delay for 1 second to control update speed
+
+    ; Calculate sparsity based on ticks
+    (let [sparsity (* (+ (// (ticks) 7) 1) 7)]
+          [start-addr (+ 0x4040 (* 1 49))]
+          [end-addr (+ 0x4040 (* 56 49))])
+
+    ; Randomly modify memory locations to simulate errors
+    (for [i start-addr (< i end-addr) (= i (+ i 1))]
+        (poke i (if (is (rand sparsity) 0) 1 0)))
+
+    ; Log the completion of the step update
+    (log "Step update completed")
 ))
+
+; Example usage of the init and step functions
+(init)
+(loop []
+    (step))
